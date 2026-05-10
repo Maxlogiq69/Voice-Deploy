@@ -1,0 +1,14 @@
+[build]
+  command = "pnpm --filter @workspace/logiq-voice-lab run build"
+  publish = "artifacts/logiq-voice-lab/dist/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PORT = "3000"
+  BASE_PATH = "/"
+
+# SPA routing — send all paths to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
