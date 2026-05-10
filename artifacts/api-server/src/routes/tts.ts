@@ -45,30 +45,28 @@ ttsRouter.post("/tts", async (req, res) => {
   }
 
   const voiceId = voice || "en-US-AriaNeural";
-  const speedNum = Math.max(0.5, Math.min(2.0, Number(speed) || 1.0));
+  const rate = Math.max(0.5, Math.min(2.0, Number(speed) || 1.0));
   const pitchNum = Math.max(0.5, Math.min(2.0, Number(pitch) || 1.0));
-
-  const rateBoost = `${speedNum >= 1 ? "+" : ""}${Math.round((speedNum - 1) * 100)}%`;
-  const pitchDelta = `${pitchNum >= 1 ? "+" : ""}${Math.round((pitchNum - 1) * 50)}Hz`;
+  const pitchHz = `${pitchNum >= 1 ? "+" : ""}${Math.round((pitchNum - 1) * 50)}Hz`;
 
   try {
     const tts = new MsEdgeTTS();
-    await tts.setMetadata(voiceId, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const readable = tts.toStream(text.trim(), undefined, pitchDelta, rateBoost);
+    await tts.setMetadata(voiceId, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+    const { audioStream } = tts.toStream(text.trim(), { rate, pitch: pitchHz });
 
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Transfer-Encoding", "chunked");
     res.setHeader("Cache-Control", "no-cache");
 
-    readable.on("data", (chunk: Buffer) => {
+    audioStream.on("data", (chunk: Buffer) => {
       res.write(chunk);
     });
 
-    readable.on("close", () => {
+    audioStream.on("close", () => {
       res.end();
     });
 
-    readable.on("error", (err: Error) => {
+    audioStream.on("error", (err: Error) => {
       req.log.error({ err }, "TTS stream error");
       if (!res.headersSent) {
         res.status(500).json({ error: "TTS generation failed" });
