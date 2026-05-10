@@ -1,128 +1,143 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-export type SpeechState = "idle" | "playing" | "paused" | "complete";
+export type SpeechState = "idle" | "loading" | "playing" | "paused" | "complete";
 
 export function useSpeech() {
   const [speechState, setSpeechState] = useState<SpeechState>("idle");
   const [progress, setProgress] = useState(0);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const durationEstimateRef = useRef<number>(0);
-  const startTimeRef = useRef<number>(0);
-  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const startProgressTracking = useCallback(() => {
-    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-    startTimeRef.current = Date.now() - (progress * durationEstimateRef.current);
-
-    progressTimerRef.current = setInterval(() => {
-      if (speechState === "playing") {
-        const elapsed = Date.now() - startTimeRef.current;
-        let newProgress = (elapsed / durationEstimateRef.current);
-        if (newProgress > 0.99) newProgress = 0.99; // Cap at 99% until onend
-        setProgress(newProgress);
-      }
-    }, 100);
-  }, [progress, speechState]);
-
-  const stopProgressTracking = useCallback(() => {
-    if (progressTimerRef.current) {
-      clearInterval(progressTimerRef.current);
-      progressTimerRef.current = null;
+  const clearInterval_ = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   }, []);
 
+  const startProgressTracking = useCallback(() => {
+    clearInterval_();
+    intervalRef.current = setInterval(() => {
+      const audio = audioRef.current;
+      if (audio && audio.duration && !isNaN(audio.duration)) {
+        setProgress(audio.currentTime / audio.duration);
+      }
+    }, 150);
+  }, [clearInterval_]);
+
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
-    if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
-    stopProgressTracking();
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    clearInterval_();
     setSpeechState("idle");
     setProgress(0);
-  }, [stopProgressTracking]);
-
-  const play = useCallback((
-    text: string, 
-    voice: SpeechSynthesisVoice | null, 
-    speed: number, 
-    pitch: number, 
-    volume: number = 1.0
-  ) => {
-    if (!voice || !text.trim()) return;
-
-    stop();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voice;
-    utterance.rate = speed;
-    utterance.pitch = pitch;
-    utterance.volume = volume;
-
-    utteranceRef.current = utterance;
-
-    // Estimate duration: words / (150 words per minute * speed)
-    const words = text.split(/\s+/).length;
-    durationEstimateRef.current = (words / (150 * speed)) * 60 * 1000;
-
-    resumeTimerRef.current = setInterval(() => {
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
-
-    utterance.onstart = () => {
-      setSpeechState("playing");
-      setProgress(0);
-      startProgressTracking();
-    };
-
-    utterance.onend = () => {
-      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
-      stopProgressTracking();
-      setSpeechState("complete");
-      setProgress(1);
-    };
-
-    utterance.onerror = (e) => {
-      console.error("SpeechSynthesis Error:", e);
-      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
-      stopProgressTracking();
-      setSpeechState("idle");
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, [stop, startProgressTracking, stopProgressTracking]);
+  }, [clearInterval_]);
 
   const pause = useCallback(() => {
-    if (speechState === "playing") {
-      window.speechSynthesis.pause();
-      setSpeechState("paused");
-      stopProgressTracking();
+    if (audioRef.current) {
+      audioRef.current.pause();
     }
-  }, [speechState, stopProgressTracking]);
+    clearInterval_();
+    setSpeechState("paused");
+  }, [clearInterval_]);
 
   const resume = useCallback(() => {
-    if (speechState === "paused") {
-      window.speechSynthesis.resume();
+    if (audioRef.current) {
+      void audioRef.current.play();
       setSpeechState("playing");
       startProgressTracking();
     }
-  }, [speechState, startProgressTracking]);
+  }, [startProgressTracking]);
+
+  const play = useCallback(
+    async (text: string, voiceId: string, speed: number, pitch: number) => {
+      if (!text.trim()) return;
+
+      if (abortRef.current) abortRef.current.abort();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      clearInterval_();
+      setSpeechState("loading");
+      setProgress(0);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const response = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice: voiceId, speed, pitch }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`TTS API returned ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        if (controller.signal.aborted) return;
+
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        audio.onplay = () => {
+          setSpeechState("playing");
+          startProgressTracking();
+        };
+
+        audio.onpause = () => {
+          if (!audio.ended) {
+            setSpeechState("paused");
+          }
+        };
+
+        audio.onended = () => {
+          clearInterval_();
+          setSpeechState("complete");
+          setProgress(1);
+        };
+
+        audio.onerror = () => {
+          clearInterval_();
+          setSpeechState("idle");
+        };
+
+        await audio.play();
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        console.error("TTS error:", err);
+        setSpeechState("idle");
+      }
+    },
+    [clearInterval_, startProgressTracking],
+  );
 
   useEffect(() => {
     return () => {
-      if (resumeTimerRef.current) clearInterval(resumeTimerRef.current);
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-      window.speechSynthesis.cancel();
+      if (abortRef.current) abortRef.current.abort();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+      clearInterval_();
     };
-  }, []);
+  }, [clearInterval_]);
 
-  return {
-    play,
-    pause,
-    resume,
-    stop,
-    speechState,
-    progress
-  };
+  return { play, pause, resume, stop, speechState, progress, audioUrl };
 }

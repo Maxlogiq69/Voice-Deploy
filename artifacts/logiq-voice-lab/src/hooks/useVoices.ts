@@ -1,31 +1,37 @@
 import { useEffect, useState } from "react";
 
+export interface EdgeVoice {
+  id: string;
+  name: string;
+  lang: string;
+  gender: "Female" | "Male";
+  locale: string;
+  description: string;
+}
+
 export function useVoices() {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voices, setVoices] = useState<EdgeVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<EdgeVoice | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      const englishVoices = availableVoices.filter(v => v.lang.startsWith("en"));
-      setVoices(englishVoices);
-
-      if (englishVoices.length > 0 && !selectedVoice) {
-        setSelectedVoice(englishVoices[0]);
-      }
-    };
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
+    fetch("/api/voices")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<EdgeVoice[]>;
+      })
+      .then((data) => {
+        setVoices(data);
+        if (data.length > 0) setSelectedVoice(data[0]);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        console.error("Failed to load voices:", err);
+        setError("Could not load voices from server.");
+        setLoading(false);
+      });
   }, []);
 
-  return {
-    voices,
-    selectedVoice,
-    setSelectedVoice
-  };
+  return { voices, selectedVoice, setSelectedVoice, loading, error };
 }
