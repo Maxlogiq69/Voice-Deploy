@@ -27,12 +27,12 @@ export function ControlPanel({
   const isDisabled = isLoading || isActive;
 
   return (
-    <div className="w-full flex flex-col md:flex-row gap-8 items-center bg-card p-6 rounded-xl border border-border shadow-sm">
-      <div className="flex-1 flex flex-col gap-6 w-full">
-        <div className="space-y-3">
+    <div className="w-full flex flex-col gap-5 bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="space-y-2.5">
           <div className="flex justify-between items-center text-sm font-medium">
             <label className="text-foreground">Speed</label>
-            <span className="text-muted-foreground w-12 text-right">{speed.toFixed(1)}x</span>
+            <span className="text-muted-foreground tabular-nums">{speed.toFixed(1)}×</span>
           </div>
           <Slider
             value={[speed]}
@@ -44,12 +44,15 @@ export function ControlPanel({
             className="w-full"
             data-testid="slider-speed"
           />
+          <div className="flex justify-between text-[10px] text-muted-foreground/60">
+            <span>0.5×</span><span>1.0×</span><span>2.0×</span>
+          </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="flex justify-between items-center text-sm font-medium">
             <label className="text-foreground">Pitch</label>
-            <span className="text-muted-foreground w-12 text-right">{pitch.toFixed(1)}</span>
+            <span className="text-muted-foreground tabular-nums">{pitch.toFixed(1)}</span>
           </div>
           <Slider
             value={[pitch]}
@@ -61,48 +64,53 @@ export function ControlPanel({
             className="w-full"
             data-testid="slider-pitch"
           />
+          <div className="flex justify-between text-[10px] text-muted-foreground/60">
+            <span>Low</span><span>Normal</span><span>High</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 w-full md:w-auto min-w-[200px]">
+      <div className="flex gap-3">
         <Button
           size="lg"
           onClick={onGenerate}
           disabled={isDisabled}
-          className="w-full h-14 text-base glow-primary font-semibold tracking-wide"
+          className="flex-1 h-12 sm:h-14 text-sm sm:text-base glow-primary font-semibold tracking-wide"
           data-testid="button-generate"
         >
           {isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Generating…</span>
-            </div>
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating…
+            </span>
           ) : isActive ? (
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1 items-center justify-center h-4">
-                <span className="w-1 h-full bg-current animate-[bounce_1s_infinite_0ms] rounded-full"></span>
-                <span className="w-1 h-2/3 bg-current animate-[bounce_1s_infinite_100ms] rounded-full"></span>
-                <span className="w-1 h-full bg-current animate-[bounce_1s_infinite_200ms] rounded-full"></span>
-                <span className="w-1 h-1/2 bg-current animate-[bounce_1s_infinite_300ms] rounded-full"></span>
-              </div>
-              <span>Playing…</span>
-            </div>
+            <span className="flex items-center gap-2">
+              <span className="flex gap-0.5 items-end h-4">
+                <span className="w-1 h-full bg-current animate-[bounce_1s_infinite_0ms] rounded-full" />
+                <span className="w-1 h-2/3 bg-current animate-[bounce_1s_infinite_100ms] rounded-full" />
+                <span className="w-1 h-full bg-current animate-[bounce_1s_infinite_200ms] rounded-full" />
+                <span className="w-1 h-1/2 bg-current animate-[bounce_1s_infinite_300ms] rounded-full" />
+              </span>
+              Playing…
+            </span>
           ) : (
-            <div className="flex items-center gap-2">
-              <Play className="w-5 h-5 fill-current" />
-              <span>Generate Voice</span>
-            </div>
+            <span className="flex items-center gap-2">
+              <Play className="w-4 h-4 fill-current" />
+              Generate Voice
+            </span>
           )}
         </Button>
+
         <Button
           size="lg"
           variant="secondary"
           onClick={onStop}
           disabled={!isDisabled}
-          className="w-full font-medium"
+          className="h-12 sm:h-14 px-4 sm:px-6 font-medium"
           data-testid="button-stop-generate"
         >
-          <Square className="w-4 h-4 mr-2 fill-current opacity-70" /> Stop
+          <Square className="w-4 h-4 fill-current opacity-70" />
+          <span className="hidden sm:inline ml-2">Stop</span>
         </Button>
       </div>
     </div>

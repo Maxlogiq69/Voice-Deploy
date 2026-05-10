@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { API_BASE } from "@/lib/api";
 
 export type SpeechState = "idle" | "loading" | "playing" | "paused" | "complete";
 
@@ -76,16 +77,14 @@ export function useSpeech() {
       abortRef.current = controller;
 
       try {
-        const response = await fetch("/api/tts", {
+        const response = await fetch(`${API_BASE}/tts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, voice: voiceId, speed, pitch }),
           signal: controller.signal,
         });
 
-        if (!response.ok) {
-          throw new Error(`TTS API returned ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`TTS API returned ${response.status}`);
 
         const blob = await response.blob();
         if (controller.signal.aborted) return;
@@ -102,9 +101,7 @@ export function useSpeech() {
         };
 
         audio.onpause = () => {
-          if (!audio.ended) {
-            setSpeechState("paused");
-          }
+          if (!audio.ended) setSpeechState("paused");
         };
 
         audio.onended = () => {

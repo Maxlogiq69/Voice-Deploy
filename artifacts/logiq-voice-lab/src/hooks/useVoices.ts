@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE } from "@/lib/api";
 
 export interface EdgeVoice {
   id: string;
@@ -11,19 +12,17 @@ export interface EdgeVoice {
 
 export function useVoices() {
   const [voices, setVoices] = useState<EdgeVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<EdgeVoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/voices")
+    fetch(`${API_BASE}/voices`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<EdgeVoice[]>;
       })
       .then((data) => {
         setVoices(data);
-        if (data.length > 0) setSelectedVoice(data[0]);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -33,5 +32,5 @@ export function useVoices() {
       });
   }, []);
 
-  return { voices, selectedVoice, setSelectedVoice, loading, error };
+  return { voices, loading, error };
 }
