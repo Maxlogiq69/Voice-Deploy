@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LogiQ Voice Lab"
+version = "1.0.0"
+id = "artifacts/logiq-voice-lab"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25853
+
+[services.development]
+run = "pnpm --filter @workspace/logiq-voice-lab run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/logiq-voice-lab", "run", "build" ]
+publicDir = "artifacts/logiq-voice-lab/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25853"
+BASE_PATH = "/"

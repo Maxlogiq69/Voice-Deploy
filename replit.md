@@ -1,45 +1,59 @@
-# [Project name]
+# LogiQ Voice Lab
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A personal AI voice narration studio for creating cinematic voiceovers for history YouTube videos. Converts text scripts to speech with multiple voice options, speed/pitch control, and a cinematic studio UI.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/logiq-voice-lab run dev` — run the frontend (port assigned by workflow)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + Tailwind CSS
+- TTS: Web Speech API (browser-native, no backend required)
+- Theme: next-themes (dark/light mode, localStorage persistence)
+- Animations: framer-motion
+- Icons: lucide-react
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/logiq-voice-lab/src/` — main frontend app
+- `artifacts/logiq-voice-lab/src/hooks/useSpeech.ts` — all TTS logic (Chrome bug fix included)
+- `artifacts/logiq-voice-lab/src/hooks/useVoices.ts` — loads/filters browser voices
+- `artifacts/logiq-voice-lab/src/components/` — Header, ScriptInput, VoiceCard, VoiceSelector, ControlPanel, AudioPlayer
+- `artifacts/logiq-voice-lab/src/pages/Studio.tsx` — main studio page
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Frontend-only (no backend)**: Uses the browser Web Speech API — works 100% on Netlify as a static site with no server needed.
+- **Chrome 15s bug fix**: The Chrome speechSynthesis API stops after ~15 seconds. Fixed with a setInterval that pauses/resumes every 10 seconds during playback.
+- **Voice loading**: `getVoices()` is async (fires `voiceschanged` event) — handled properly with a custom hook.
+- **Download**: Audio download via Web Speech API is not natively possible; users are guided to use system recording tools. Script text downloads as .txt.
+- **Dark mode default**: Default theme is dark for the cinematic studio feel; preference saved to localStorage.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Paste a script → select a voice → adjust speed/pitch → generate speech narration
+- Supports all English voices provided by the browser (Chrome/Edge have Microsoft Neural voices)
+- Playback controls: play, pause, resume, stop
+- Dark mode (deep navy + amber glow) / Light mode toggle
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Must deploy on Netlify as a static site with no backend
+- TTS must work 100% correctly — uses browser-native Web Speech API
+- No login, database, ads, or multi-user features
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Voice quality depends on the browser — Chrome/Edge have the best neural voices (Microsoft voices)
+- `getVoices()` returns empty array synchronously on first call; always wait for `voiceschanged` event
+- Chrome stops speechSynthesis after ~15s without the pause/resume workaround
 
-## Pointers
+## Netlify Deployment
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+Build command: `pnpm --filter @workspace/logiq-voice-lab run build`
+Publish directory: `artifacts/logiq-voice-lab/dist/public`
+No environment variables needed.

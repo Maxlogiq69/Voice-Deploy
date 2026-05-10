@@ -1,0 +1,300 @@
+LOGIQ VOICE LAB — FULL WEB APP DESCRIPTION (BUILD PROMPT)
+
+Build a full-stack web application called “LogiQ Voice Lab”, a personal AI voice narration studio for creating cinematic voiceovers for history videos.
+
+The app must be simple, fast, and production-ready for a single creator.
+
+
+---
+
+🎯 CORE PURPOSE
+
+The app converts:
+
+> Text script → AI voice narration → downloadable MP3 audio
+
+
+
+Used for YouTube history narration content.
+
+
+---
+
+🧠 MAIN FEATURES
+
+1. 🎨 THEME SYSTEM (IMPORTANT)
+
+The app must support two modes:
+
+🌙 Dark Mode
+
+Black / deep navy background
+
+Soft glowing accent colors (orange or cyan)
+
+Cinematic studio feel
+
+
+☀️ Light Mode
+
+White / soft gray background
+
+Clean minimal UI
+
+Subtle shadows instead of glow
+
+
+Toggle:
+
+A switch button in top-right corner: “🌙 / ☀️ Theme Toggle”
+
+Saves preference in localStorage
+
+
+
+---
+
+🖥️ UI STRUCTURE
+
+HEADER
+
+Logo: 🎙️ LogiQ Voice Lab
+
+Subtitle: “AI Narration Studio”
+
+Theme toggle button
+
+
+
+---
+
+MAIN LAYOUT (CENTERED CARD SYSTEM)
+
+1. SCRIPT INPUT SECTION
+
+Large textarea:
+
+unlimited text
+
+auto expanding height
+
+placeholder: “Paste your history script here…”
+
+
+Below textarea:
+
+Word counter
+
+Estimated reading time (words ÷ 150)
+
+
+
+---
+
+2. VOICE SELECTION PANEL
+
+Grid of 4–6 voice cards:
+
+Each card includes:
+
+Voice name
+
+Short description
+
+Accent label (US / UK / cinematic / documentary)
+
+“Preview” button (plays sample audio)
+
+“Select” button
+
+
+Default selected voice is highlighted.
+
+
+---
+
+3. CONTROL PANEL
+
+Includes:
+
+🎙️ Generate Voice button (main action)
+
+⏹️ Stop button
+
+🎚️ Speed slider (0.8x – 1.5x)
+
+Optional pitch slider (simple)
+
+
+Generate button shows loading state:
+
+animated waveform or spinner
+
+
+
+---
+
+🔊 AUDIO SYSTEM (VERY IMPORTANT)
+
+HOW AUDIO IS GENERATED
+
+The app MUST use a backend TTS system:
+
+Option A (recommended free method):
+
+Microsoft Edge Neural TTS via: edge-tts (Python) OR Node wrapper
+
+
+Option B (future upgrade):
+
+ElevenLabs API (if key is added later)
+
+
+
+---
+
+AUDIO FLOW
+
+1. User clicks “Generate Voice”
+
+
+2. Frontend sends request:
+
+POST /api/tts
+{
+  text: "script",
+  voice: "selectedVoice",
+  speed: 1.0
+}
+
+
+3. Backend:
+
+receives text
+
+converts it to speech using Edge TTS
+
+generates MP3 file
+
+
+
+4. Backend returns:
+
+audio file (MP3 stream or URL)
+
+
+
+5. Frontend:
+
+automatically plays audio
+
+shows audio player
+
+
+
+
+
+---
+
+AUDIO PLAYER UI
+
+Appears after generation:
+
+Play / Pause button
+
+Progress bar
+
+Duration
+
+Volume control
+
+Download MP3 button
+
+
+Download format:
+
+logiq-voice-[timestamp].mp3
+
+
+---
+
+⚙️ BACKEND REQUIREMENTS
+
+Node.js + Express server:
+
+Endpoints:
+
+POST /api/tts
+
+input: text, voice, speed
+
+output: MP3 audio file
+
+
+GET /api/voices
+
+returns available voices list
+
+
+Backend responsibilities:
+
+validate input
+
+call TTS engine
+
+generate MP3
+
+return audio stream or file URL
+
+
+
+---
+
+📱 MOBILE RESPONSIVENESS
+
+Must support:
+
+stacked layout
+
+full-width buttons
+
+touch-friendly controls
+
+scrollable voice cards
+
+
+
+---
+
+🎬 UI ANIMATIONS
+
+Fade-in cards on load
+
+Smooth transitions between states
+
+Button hover glow (dark mode)
+
+Subtle shadow lift (light mode)
+
+Waveform animation during generation
+
+
+
+---
+
+🚫 DO NOT INCLUDE
+
+login system
+
+database
+
+analytics
+
+ads
+
+social features
+
+multi-user system
+
+
+This is strictly a single-user creator tool.
