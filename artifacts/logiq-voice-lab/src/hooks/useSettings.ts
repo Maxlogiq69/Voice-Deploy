@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 
 export const DEFAULT_FAVORITE_IDS = [
-  "en-US-DavisNeural",
   "en-US-GuyNeural",
-  "en-US-JasonNeural",
+  "en-US-ChristopherNeural",
+  "en-US-EricNeural",
   "en-GB-RyanNeural",
   "en-AU-WilliamNeural",
 ];
@@ -40,7 +40,7 @@ function useLocalStorage<T>(key: string, defaultValue: T) {
 export function useSettings() {
   const [selectedVoiceId, setSelectedVoiceId] = useLocalStorage<string>(
     "logiq-voice-id",
-    "en-US-DavisNeural",
+    "en-US-ChristopherNeural",
   );
   const [speed, setSpeed] = useLocalStorage<number>("logiq-speed", 1.0);
   const [pitch, setPitch] = useLocalStorage<number>("logiq-pitch", 1.0);
